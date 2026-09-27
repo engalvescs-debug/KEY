@@ -1,104 +1,108 @@
 var Telas = window.Telas || {};
 
 Telas.montarPalavras = function (raiz) {
-  const ordem = embaralhar(CONTENT.palavras);
+  const feitos = new Set(App.progresso.concluidos.palavras || []);
+  const rodadas = [
+    ...embaralhar(CONTENT.palavras.filter(p => !feitos.has(p.palavra))),
+    ...embaralhar(CONTENT.palavras.filter(p => feitos.has(p.palavra)))
+  ].slice(0, 6);
   let indice = 0;
 
   function montarRodada() {
-    if (indice >= ordem.length) return renderCelebracao();
+    if (indice >= rodadas.length) {
+      return telaCelebracao(raiz, {
+        titulo: 'Montar Palavras',
+        repetir: () => App.navegarPara('montarPalavras', {}, { empilhar: false })
+      });
+    }
 
-    const alvo = ordem[indice];
-    const silabasAlvo = alvo.silabas;
-    let posicao = 0; // próxima sílaba esperada
+    const alvo = rodadas[indice];
+    const partes = alvo.silabas;
+    let posicao = 0;
+    let erros = 0;
 
-    const outrasSilabas = CONTENT.palavras
-      .filter(p => p.palavra !== alvo.palavra)
-      .flatMap(p => p.silabas);
-    const distratores = embaralhar([...new Set(outrasSilabas.filter(s => !silabasAlvo.includes(s)))]).slice(0, 2);
-    const opcoes = embaralhar([...silabasAlvo, ...distratores]);
+    const outras = CONTENT.palavras.filter(p => p.palavra !== alvo.palavra).flatMap(p => p.silabas);
+    const distratores = embaralhar([...new Set(outras.filter(s => !partes.includes(s)))]).slice(0, 2);
+    const opcoes = embaralhar([...partes, ...distratores]);
 
     raiz.innerHTML = `
       ${App.estrelasHtml()}
       <div class="tela">
-        <h1 class="titulo">Monte a palavra</h1>
-        <div class="pagina-historia" style="gap:1vh">
+        ${bolinhasProgresso(rodadas.length, indice)}
+        <h1 class="titulo">Monte a palavra!</h1>
+        <div class="cena-palavra">
           <div class="emoji-cena">${alvo.emoji}</div>
-          <div class="letra" id="espacos" style="font-size:3.5vw; letter-spacing:0.2em">
-            ${silabasAlvo.map(() => '__').join(' ')}
+          <div class="espacos">
+            ${partes.map((_, i) => `<div class="espaco" data-pos="${i}" style="${Efeitos.estiloCor(alvo.cor)}">?</div>`).join('')}
           </div>
         </div>
-        <div class="painel-mensagem" id="mensagem"></div>
-        <div class="grade">
+        <div class="grade grade-quiz">
           ${opcoes.map((s, i) => `
-            <div class="cartao focavel" data-silaba="${s}" data-i="${i}" style="min-width:9vw">
-              <div class="letra" style="color:${alvo.cor}">${s}</div>
+            <div class="cartao cartao-silaba focavel" data-silaba="${s}" style="${Efeitos.estiloCor(alvo.cor)}--i:${i}">
+              <div class="letra">${s}</div>
             </div>
           `).join('')}
         </div>
         <div class="barra-inferior">
-          <div class="botao focavel" data-acao="voltar">⬅️ Sair</div>
+          ${botao('voltar', '⬅️ Sair')}
+          ${botao('ouvir', '🔊 Ouvir de novo')}
         </div>
-        <p class="rodape-dicas">Toque nas sílabas na ordem certa 💛</p>
       </div>
     `;
 
-    raiz.querySelector('[data-acao="voltar"]').addEventListener('click', () => App.voltar());
+    const falaInicial = [FALAS.montarPalavra, alvo.palavra, FALAS.montarDica];
+    ligarAcoes(raiz, {
+      voltar: () => App.voltar(),
+      ouvir: () => Mascote.dizer([alvo.palavra], { devagar: true })
+    });
+
     raiz.querySelectorAll('[data-silaba]').forEach(el => {
       el.addEventListener('click', () => escolher(el));
     });
 
     requestAnimationFrame(() => Navegacao.focarPrimeiro());
-    Narrador.falar(`Vamos montar a palavra ${alvo.palavra.toLowerCase()}. Toque nas sílabas em ordem.`);
+    Mascote.dizer(falaInicial);
 
     function escolher(el) {
-      if (el.dataset.usado) return;
+      if (el.dataset.usado || posicao >= partes.length) return;
       const silaba = el.dataset.silaba;
-      const mensagem = document.getElementById('mensagem');
 
-      if (silaba === silabasAlvo[posicao]) {
-        el.dataset.usado = '1';
-        el.style.opacity = '0.35';
-        el.style.borderColor = '#6BCB77';
-        posicao += 1;
-        Narrador.falar(silaba, { devagar: true });
-
-        const espacos = document.getElementById('espacos');
-        espacos.textContent = silabasAlvo
-          .map((s, i) => (i < posicao ? s : '__'))
-          .join(' ');
-
-        if (posicao === silabasAlvo.length) {
-          mensagem.innerHTML = '<span class="mensagem-gentil">🎉 Isso! Você montou a palavra!</span>';
-          Narrador.tocarConquista();
-          setTimeout(() => Narrador.falar(alvo.palavra), 400);
-          App.marcarConcluido('palavras', alvo.palavra);
-          indice += 1;
-          setTimeout(montarRodada, 2000);
+      if (silaba !== partes[posicao]) {
+        erros += 1;
+        Efeitos.tremer(el);
+        Som.quase();
+        Mascote.pensar();
+        Mascote.dizer([sorteio(FALAS.quase), alvo.palavra]);
+        if (erros >= 2) {
+          const certo = raiz.querySelector(`[data-silaba="${partes[posicao]}"]:not([data-usado])`);
+          if (certo) certo.classList.add('dica');
         }
-      } else {
-        mensagem.innerHTML = '<span class="mensagem-gentil">💛 Quase! Olhe os espaços e tente de novo.</span>';
-        Narrador.falar('Quase! Tenta de novo.');
+        return;
       }
-    }
-  }
 
-  function renderCelebracao() {
-    raiz.innerHTML = `
-      ${App.estrelasHtml()}
-      <div class="tela">
-        <h1 class="titulo">🏆 Você conseguiu!</h1>
-        <h2 class="subtitulo">Montou todas as palavras. Parabéns!</h2>
-        <div class="grade" style="font-size:6vw">🎉🌟🎊</div>
-        <div class="barra-inferior">
-          <div class="botao focavel" data-acao="niveis">🎮 Ver Níveis</div>
-          <div class="botao principal focavel" data-acao="repetir">🔁 Jogar de Novo</div>
-        </div>
-      </div>
-    `;
-    raiz.querySelector('[data-acao="niveis"]').addEventListener('click', () => App.navegarPara('niveis'));
-    raiz.querySelector('[data-acao="repetir"]').addEventListener('click', () => App.navegarPara('montarPalavras'));
-    requestAnimationFrame(() => Navegacao.focarPrimeiro());
-    Narrador.falar('Você completou este nível! Parabéns!');
+      erros = 0;
+      raiz.querySelectorAll('.dica').forEach(d => d.classList.remove('dica'));
+      el.dataset.usado = '1';
+      el.classList.add('usado');
+      const espaco = raiz.querySelector(`.espaco[data-pos="${posicao}"]`);
+      espaco.textContent = silaba;
+      espaco.classList.add('preenchido');
+      posicao += 1;
+      Som.pop();
+
+      if (posicao < partes.length) {
+        Mascote.dizer(silaba, { devagar: true });
+        return;
+      }
+
+      raiz.querySelector('.espacos').classList.add('completa');
+      Som.conquista();
+      Mascote.comemorar();
+      Mascote.dizer([alvo.palavra, FALAS.palavraMontada], { balao: `${alvo.palavra}! ${FALAS.palavraMontada}` });
+      App.marcarConcluido('palavras', alvo.palavra, raiz.querySelector('.espacos'));
+      indice += 1;
+      setTimeout(montarRodada, 2600);
+    }
   }
 
   montarRodada();

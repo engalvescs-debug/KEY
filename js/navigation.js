@@ -19,7 +19,7 @@ const Navegacao = (function () {
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   }
 
-  function focar(indice) {
+  function focar(indice, silencioso = false) {
     const itens = itensFocaveis();
     if (!itens.length) return;
     indiceAtual = Math.max(0, Math.min(indice, itens.length - 1));
@@ -27,11 +27,21 @@ const Navegacao = (function () {
     const alvo = itens[indiceAtual];
     alvo.classList.add('focado');
     alvo.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (!silencioso) Som.blip();
+    window.dispatchEvent(new CustomEvent('foco', { detail: alvo }));
   }
+
+  // Toque/mouse também move o destaque, para o foco nunca "sumir".
+  document.addEventListener('pointerdown', e => {
+    const alvo = e.target.closest && e.target.closest('.focavel');
+    if (!alvo) return;
+    const i = itensFocaveis().indexOf(alvo);
+    if (i >= 0) focar(i, true);
+  });
 
   function focarPrimeiro() {
     indiceAtual = -1;
-    focar(0);
+    focar(0, true);
   }
 
   function mover(direcao) {

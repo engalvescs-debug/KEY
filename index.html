@@ -3,21 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#4B2FB8" />
   <title>Aprender a Ler - Jogo Educativo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div id="app"></div>
+  <div id="fundo-animado" aria-hidden="true"></div>
+  <div id="app">
+    <aside id="mascote-area"></aside>
+    <main id="conteudo"></main>
+  </div>
 
-  <!-- PeerJS: usado só para a ponte de comando por celular (tela Configurações). -->
+  <!-- PeerJS: usado só para a ponte de comando por celular (tela Ajustes). -->
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
   <script src="js/data/content.js"></script>
+  <script src="js/falas.js"></script>
+  <script src="audio/manifest.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/audio.js"></script>
+  <script src="js/efeitos.js"></script>
+  <script src="js/mascote.js"></script>
   <script src="js/navigation.js"></script>
   <script src="js/voz.js"></script>
 
+  <script src="js/screens/comum.js"></script>
+  <script src="js/screens/inicio.js"></script>
   <script src="js/screens/menu.js"></script>
   <script src="js/screens/niveis.js"></script>
   <script src="js/screens/aprender.js"></script>

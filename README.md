@@ -38,16 +38,45 @@ conteúdo estiver validado no navegador.
 
 ```
 index.html              tela principal (TV)
-css/style.css           visual, tamanhos grandes e "Modo Calmo"
+css/style.css           visual colorido, animações, "Modo Calmo" e "Parar animações"
 js/data/content.js      todo o conteúdo pedagógico (vogais, letras, sílabas, palavras, histórias)
+js/falas.js             tudo o que a Lulu fala (frases fixas + pronúncia de letras/sílabas)
 js/app.js               controlador de telas / navegação entre elas
 js/navigation.js        navegação espacial por controle remoto (setas + OK + voltar)
-js/audio.js             narração por voz (Text-to-Speech) e sons de recompensa
+js/audio.js             narração (gravações ou voz do aparelho), música de fundo e efeitos
+js/mascote.js           a Lulu, corujinha guia (SVG animado + balão de fala)
+js/efeitos.js           fundo animado, confete, estrela voando, cores
 js/storage.js           progresso salvo no navegador (estrelas, níveis concluídos)
 js/voz.js               ponte de comando por celular (WebRTC/PeerJS)
-js/screens/*.js         cada tela do jogo (menu, níveis, história, configurações...)
+js/screens/*.js         cada tela do jogo (abertura, menu, níveis, história, ajustes...)
+audio/                  falas gravadas (mp3) + manifest.js com a lista delas
+tools/                  scripts para gerar/cortar as gravações de voz
 mic/                    página que roda no CELULAR (controle remoto + microfone)
 ```
+
+## Personagem, música e voz
+
+- **Lulu, a corujinha**: acompanha a criança em todas as telas. Pisca,
+  flutua, mexe o bico quando fala, segue com os olhos o cartão escolhido,
+  pula e bate as asas nos acertos e inclina a cabeça "pensando" quando a
+  criança erra. O que ela fala também aparece escrito no balão.
+- **Música de fundo** tipo caixinha de música, composta em notas e tocada
+  pelo próprio navegador (sem arquivo de áudio). Abaixa sozinha quando a
+  Lulu fala. Liga/desliga em Ajustes.
+- **Voz**: se existir uma gravação em `audio/<slug>.mp3`, o jogo toca a
+  gravação (voz humana natural). Se não existir, usa a melhor voz em
+  português disponível no aparelho (dando preferência às vozes "naturais"
+  ou "neurais").
+
+### Como gerar as gravações de voz
+
+1. `node tools/listar-falas.js --faltando > falas.json` lista cada fala
+   com o texto a ser pronunciado e o nome do arquivo (slug).
+2. Gere o áudio no ElevenLabs lendo as falas em sequência, com uma pausa
+   de ~1,2s entre elas (`<break time="1.2s" />`).
+3. `python3 tools/dividir_audio.py gravacao.mp3 slugs.json audio/` corta a
+   gravação em um arquivo por fala.
+4. `node tools/gerar-manifest.js` atualiza a lista de gravações.
 
 ## O que já está pronto (nesta primeira versão)
 
@@ -64,8 +93,10 @@ mic/                    página que roda no CELULAR (controle remoto + microfone
   - Sem cronômetro, sem "errou" de forma negativa — sempre uma mensagem
     gentil convidando a tentar de novo, sem limite de tentativas.
   - Sons de recompensa suaves (sem estridência), nunca sons de erro.
-  - **Modo Calmo** (paleta mais suave) e opção de **reduzir animações**,
-    nas Configurações.
+  - Depois de duas tentativas, o cartão certo começa a brilhar como dica
+    (aprendizagem sem frustração).
+  - **Modo Calmo** (cores e música mais suaves, menos confete) e opção de
+    **parar animações** por completo, nos Ajustes.
   - Suporte visual sempre redundante: letra + cor + emoji + palavra juntos
     (nunca só texto ou só imagem).
   - Navegação 100% previsível pelo controle remoto (mesmo padrão em toda
@@ -88,10 +119,9 @@ mic/                    página que roda no CELULAR (controle remoto + microfone
   receber os comandos — é um projeto à parte, mais burocrático (aprovação
   da Amazon), então ficou fora desta primeira versão. A ponte por celular
   já resolve o "controle por voz" enquanto isso.
-- **Mais conteúdo**: mais histórias, ilustrações desenhadas (hoje usamos
+- **Mais conteúdo**: mais histórias e ilustrações desenhadas (hoje usamos
   emoji, que funciona bem e sem depender de internet, mas dá pra evoluir
-  para ilustrações originais), e sons gravados por dublador ao invés da
-  voz sintética do navegador.
+  para ilustrações originais).
 - **Empacotar como app Tizen** instalável, para não depender de abrir o
   navegador manualmente na TV toda vez.
 
@@ -99,8 +129,10 @@ mic/                    página que roda no CELULAR (controle remoto + microfone
 
 - Sem build step, sem dependências para instalar — só HTML/CSS/JS puro,
   roda em qualquer servidor estático.
-- A narração usa a *Web Speech API* do navegador (nenhum áudio gravado é
-  necessário), e falha em silêncio se a TV não suportar.
+- Sem gravações, a narração usa a *Web Speech API* do navegador, e falha
+  em silêncio se a TV não suportar.
+- A tela de abertura ("Vamos brincar!") existe também porque navegadores
+  só liberam som depois do primeiro toque/OK da pessoa.
 - O controle por celular usa a biblioteca **PeerJS** (WebRTC) carregada
   por CDN, que só usa um servidor público gratuito para o pareamento
   inicial — depois disso o tráfego é direto entre os dois aparelhos.

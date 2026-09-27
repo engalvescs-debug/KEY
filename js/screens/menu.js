@@ -1,32 +1,33 @@
 var Telas = window.Telas || {};
 
 Telas.menu = function (raiz) {
+  const opcoes = [
+    { acao: 'niveis', emoji: '🎮', rotulo: 'Jogar', cor: '#FF9F45' },
+    { acao: 'historias', emoji: '📖', rotulo: 'Histórias', cor: '#4D96FF' },
+    { acao: 'configuracoes', emoji: '⚙️', rotulo: 'Ajustes', cor: '#6BCB77' }
+  ];
+
   raiz.innerHTML = `
     ${App.estrelasHtml()}
     <div class="tela">
-      <h1 class="titulo">📚 Aprender a Ler</h1>
-      <h2 class="subtitulo">Escolha o que vamos fazer hoje!</h2>
+      <h1 class="titulo titulo-grande">${Efeitos.arcoIris('Aprender a Ler')}</h1>
       <div class="grade">
-        <div class="cartao focavel" data-acao="niveis">
-          <div class="emoji">🎮</div>
-          <div class="letra" style="font-size:1.6vw">Jogo dos Níveis</div>
-        </div>
-        <div class="cartao focavel" data-acao="historias">
-          <div class="emoji">📖</div>
-          <div class="letra" style="font-size:1.6vw">Modo História</div>
-        </div>
-        <div class="cartao focavel" data-acao="configuracoes">
-          <div class="emoji">⚙️</div>
-          <div class="letra" style="font-size:1.6vw">Configurações</div>
-        </div>
+        ${opcoes.map((o, i) => `
+          <div class="cartao cartao-menu focavel" data-acao="${o.acao}" style="${Efeitos.estiloCor(o.cor)}--i:${i}">
+            <div class="emoji emoji-pulando">${o.emoji}</div>
+            <div class="rotulo">${o.rotulo}</div>
+          </div>
+        `).join('')}
       </div>
-      <p class="rodape-dicas">Use as setas do controle para navegar e OK para escolher 🕹️</p>
+      <p class="rodape-dicas">Use as setas do controle para escolher e OK para entrar 🕹️</p>
     </div>
   `;
 
-  raiz.querySelectorAll('[data-acao]').forEach(el => {
-    el.addEventListener('click', () => App.navegarPara(el.dataset.acao));
+  ligarAcoes(raiz, {
+    niveis: () => App.navegarPara('niveis'),
+    historias: () => App.navegarPara('historias'),
+    configuracoes: () => App.navegarPara('configuracoes')
   });
 
-  App.narrarAoAbrir('O que vamos fazer hoje? Escolha uma opção.');
+  App.narrarAoAbrir(FALAS.menu);
 };

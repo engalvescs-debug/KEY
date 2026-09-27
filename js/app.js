@@ -1,57 +1,85 @@
-// Controlador central: pilha de telas, progresso e helpers de UI
-// compartilhados entre as telas (js/screens/*.js).
+// Controlador central: pilha de telas, progresso e preferências. As telas
+// (js/screens/*.js) renderizam em #conteudo; a Lulu vive em #mascote-area.
 
 const App = (function () {
-  const raiz = document.getElementById('app');
-  const pilha = []; // histórico de { nome, params } para o botão Voltar
+  const raiz = document.getElementById('conteudo');
+  const pilha = [];
   let progresso = carregarProgresso();
 
-  function aplicarPreferenciasVisuais() {
-    document.body.classList.toggle('modo-calmo', progresso.preferencias.modoCalmo);
-    document.body.classList.toggle('reduzir-animacoes', progresso.preferencias.reduzirAnimacoes);
-    Narrador.definirVolume(progresso.preferencias.volume);
+  function aplicarPreferencias() {
+    const p = progresso.preferencias;
+    document.body.classList.toggle('modo-calmo', p.modoCalmo);
+    document.body.classList.toggle('reduzir-animacoes', p.reduzirAnimacoes);
+    Narrador.definirVolume(p.volume);
+    Som.definirVolume(p.volume);
+    Som.definirSuave(p.modoCalmo);
+    Musica.definirVolume(p.volume);
+    Musica.definirCalmo(p.modoCalmo);
   }
 
-  function navegarPara(nome, params = {}, empilhar = true) {
-    if (empilhar) pilha.push({ nome, params });
+  function navegarPara(nome, params = {}, opcoes = {}) {
+    if (opcoes.substituir) pilha.length = 0;
+    // Recomeça o histórico a partir do menu (ex.: "Ver Níveis" ao fim de um nível).
+    if (opcoes.aPartirDoMenu) pilha.splice(0, pilha.length, { nome: 'menu', params: {} });
+    if (opcoes.empilhar !== false) pilha.push({ nome, params });
     Narrador.parar();
+    Mascote.limparBalao();
+    document.body.dataset.tela = nome;
     raiz.innerHTML = '';
     Telas[nome](raiz, params);
-    aplicarPreferenciasVisuais();
-    // Dá tempo do DOM montar antes de focar o primeiro item navegável.
     requestAnimationFrame(() => Navegacao.focarPrimeiro());
   }
 
   function voltar() {
-    if (pilha.length <= 1) return; // já está na tela inicial
+    if (pilha.length <= 1) return;
     pilha.pop();
     const anterior = pilha[pilha.length - 1];
-    navegarPara(anterior.nome, anterior.params, false);
+    navegarPara(anterior.nome, anterior.params, { empilhar: false });
   }
 
-  function narrarAoAbrir(texto) {
-    if (progresso.preferencias.narracaoAutomatica) Narrador.falar(texto);
+  function narrarAoAbrir(partes) {
+    if (progresso.preferencias.narracaoAutomatica) Mascote.dizer(partes);
   }
 
   function estrelasHtml() {
-    return `<div class="progresso-estrelas">⭐ ${progresso.estrelas}</div>`;
+    return `<div class="progresso-estrelas"><span class="estrela-icone">⭐</span> ${progresso.estrelas}</div>`;
+  }
+
+  function comecar() {
+    Som.desbloquear();
+    if (progresso.preferencias.musica) Musica.iniciar();
+    navegarPara('menu', {}, { substituir: true });
   }
 
   return {
     iniciar() {
-      navegarPara('menu', {});
+      aplicarPreferencias();
+      Efeitos.montarFundo();
+      Mascote.montar();
+      navegarPara('inicio', {}, { substituir: true });
     },
+    comecar,
     navegarPara,
     voltar,
     narrarAoAbrir,
     estrelasHtml,
     get progresso() { return progresso; },
-    salvar() { salvarProgresso(progresso); },
-    marcarConcluido(categoria, id) { progresso = marcarConcluido(progresso, categoria, id); },
+    // origem: elemento de onde a estrelinha sai voando até o contador.
+    marcarConcluido(categoria, id, origem) {
+      const antes = progresso.estrelas;
+      progresso = marcarConcluido(progresso, categoria, id);
+      if (progresso.estrelas === antes) return;
+      const atualizarContador = () => {
+        const el = document.querySelector('.progresso-estrelas');
+        if (el) el.innerHTML = `<span class="estrela-icone">⭐</span> ${progresso.estrelas}`;
+      };
+      Efeitos.estrelaVoa(origem, atualizarContador);
+    },
     atualizarPreferencia(chave, valor) {
       progresso.preferencias[chave] = valor;
       salvarProgresso(progresso);
-      aplicarPreferenciasVisuais();
+      aplicarPreferencias();
+      if (chave === 'musica') valor ? Musica.iniciar() : Musica.parar();
     }
   };
 })();

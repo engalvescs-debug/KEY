@@ -18,6 +18,7 @@ function estadoPadrao() {
       modoCalmo: false,
       reduzirAnimacoes: false,
       narracaoAutomatica: true,
+      musica: true,
       volume: 0.8
     }
   };

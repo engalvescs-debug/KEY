@@ -1,29 +1,32 @@
 var Telas = window.Telas || {};
 
 Telas.historias = function (raiz) {
-  const cartoes = CONTENT.historias.map(h => `
-    <div class="cartao focavel" data-id="${h.id}" style="border-color:${h.cor}22; min-width:18vw">
-      <div class="emoji" style="font-size:6vw">${h.capa}</div>
-      <div class="letra" style="font-size:1.6vw; color:${h.cor}">${h.titulo}</div>
+  const lidas = new Set(App.progresso.concluidos.historias || []);
+  const capas = CONTENT.historias.map((h, i) => `
+    <div class="cartao cartao-livro focavel" data-id="${h.id}" style="${Efeitos.estiloCor(h.cor)}--i:${i}">
+      ${lidas.has(h.id) ? '<div class="selo-numero">✅</div>' : ''}
+      <div class="emoji emoji-pulando">${h.capa}</div>
+      <div class="rotulo">${h.titulo}</div>
     </div>
   `).join('');
 
   raiz.innerHTML = `
     ${App.estrelasHtml()}
     <div class="tela">
-      <h1 class="titulo">📖 Modo História</h1>
-      <h2 class="subtitulo">Escolha uma história para ler e ouvir</h2>
-      <div class="grade">${cartoes}</div>
-      <div class="barra-inferior">
-        <div class="botao focavel" data-acao="voltar">⬅️ Voltar</div>
-      </div>
+      <h1 class="titulo">${Efeitos.arcoIris('Hora da História')}</h1>
+      <h2 class="subtitulo">Escolha um livro para a gente ler juntinhos</h2>
+      <div class="grade">${capas}</div>
+      <div class="barra-inferior">${botao('voltar', '⬅️ Voltar')}</div>
     </div>
   `;
 
   raiz.querySelectorAll('[data-id]').forEach(el => {
-    el.addEventListener('click', () => App.navegarPara('historiaLeitura', { id: el.dataset.id, pagina: 0 }));
+    el.addEventListener('click', () => {
+      Som.pagina();
+      App.navegarPara('historiaLeitura', { id: el.dataset.id, pagina: 0 });
+    });
   });
-  raiz.querySelector('[data-acao="voltar"]').addEventListener('click', () => App.voltar());
+  ligarAcoes(raiz, { voltar: () => App.voltar() });
 
-  App.narrarAoAbrir('Escolha uma história para ler.');
+  App.narrarAoAbrir(FALAS.historias);
 };
