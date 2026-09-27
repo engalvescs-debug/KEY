@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const raiz = path.join(__dirname, '..');
-for (const arquivo of ['js/data/content.js', 'js/falas.js']) {
+for (const arquivo of ['js/data/content.js', 'js/data/historias.js', 'js/falas.js']) {
   vm.runInThisContext(fs.readFileSync(path.join(raiz, arquivo), 'utf8'), { filename: arquivo });
 }
 

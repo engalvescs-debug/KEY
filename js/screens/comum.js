@@ -62,6 +62,72 @@ function telaCelebracao(raiz, { titulo, repetir }) {
   Mascote.dizer(FALAS.nivelCompleto);
 }
 
+// "Monte a palavra" tocando nas sílabas em ordem. Renderiza dentro de `el`
+// e chama aoConcluir(elementoDaPalavra) quando a palavra fica completa.
+function montarPalavraUI(el, { palavra, silabas, emoji, cor, distratores, aoConcluir }) {
+  let posicao = 0;
+  let erros = 0;
+  const opcoes = embaralhar([...silabas, ...distratores.filter(s => !silabas.includes(s)).slice(0, 2)]);
+
+  el.innerHTML = `
+    <div class="cena-palavra">
+      <div class="emoji-cena">${emoji}</div>
+      <div class="espacos">
+        ${silabas.map((_, i) => `<div class="espaco" data-pos="${i}" style="${Efeitos.estiloCor(cor)}">?</div>`).join('')}
+      </div>
+    </div>
+    <div class="grade grade-quiz">
+      ${opcoes.map((s, i) => `
+        <div class="cartao cartao-silaba focavel" data-silaba="${s}" style="${Efeitos.estiloCor(cor)}--i:${i}">
+          <div class="letra">${s}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  el.querySelectorAll('[data-silaba]').forEach(card => card.addEventListener('click', () => escolher(card)));
+
+  function escolher(card) {
+    if (card.dataset.usado || posicao >= silabas.length) return;
+    const silaba = card.dataset.silaba;
+
+    if (silaba !== silabas[posicao]) {
+      erros += 1;
+      Efeitos.tremer(card);
+      Som.quase();
+      Mascote.pensar();
+      Mascote.dizer([sorteio(FALAS.quase), palavra]);
+      if (erros >= 2) {
+        const certo = el.querySelector(`[data-silaba="${silabas[posicao]}"]:not([data-usado])`);
+        if (certo) certo.classList.add('dica');
+      }
+      return;
+    }
+
+    erros = 0;
+    el.querySelectorAll('.dica').forEach(d => d.classList.remove('dica'));
+    card.dataset.usado = '1';
+    card.classList.add('usado');
+    const espaco = el.querySelector(`.espaco[data-pos="${posicao}"]`);
+    espaco.textContent = silaba;
+    espaco.classList.add('preenchido');
+    posicao += 1;
+    Som.pop();
+
+    if (posicao < silabas.length) {
+      Mascote.dizer(silaba, { devagar: true });
+      return;
+    }
+
+    const espacos = el.querySelector('.espacos');
+    espacos.classList.add('completa');
+    Som.conquista();
+    Mascote.comemorar();
+    Mascote.dizer([palavra, FALAS.palavraMontada], { balao: `${palavra}! ${FALAS.palavraMontada}` });
+    aoConcluir(espacos);
+  }
+}
+
 // Quiz genérico "encontre o item": prioriza itens ainda não aprendidos,
 // nunca pune o erro e mostra uma dica visual após duas tentativas.
 function rodarQuiz(raiz, cfg) {

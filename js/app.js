@@ -5,6 +5,8 @@ const App = (function () {
   const raiz = document.getElementById('conteudo');
   const pilha = [];
   let progresso = carregarProgresso();
+  // Muda a cada troca de tela; timers de uma tela antiga conferem isso antes de agir.
+  let geracao = 0;
 
   function aplicarPreferencias() {
     const p = progresso.preferencias;
@@ -14,6 +16,7 @@ const App = (function () {
     Som.definirVolume(p.volume);
     Som.definirSuave(p.modoCalmo);
     Musica.definirVolume(p.volume);
+    Cancao.definirVolume(p.volume);
     Musica.definirCalmo(p.modoCalmo);
   }
 
@@ -22,8 +25,12 @@ const App = (function () {
     // Recomeça o histórico a partir do menu (ex.: "Ver Níveis" ao fim de um nível).
     if (opcoes.aPartirDoMenu) pilha.splice(0, pilha.length, { nome: 'menu', params: {} });
     if (opcoes.empilhar !== false) pilha.push({ nome, params });
+    geracao += 1;
     Narrador.parar();
+    Cancao.parar();
+    if (nome !== 'historiaLeitura') Musica.definirTema(null);
     Mascote.limparBalao();
+    Mascote.dancar(false);
     document.body.dataset.tela = nome;
     raiz.innerHTML = '';
     Telas[nome](raiz, params);
@@ -64,6 +71,7 @@ const App = (function () {
     narrarAoAbrir,
     estrelasHtml,
     get progresso() { return progresso; },
+    get geracao() { return geracao; },
     // origem: elemento de onde a estrelinha sai voando até o contador.
     marcarConcluido(categoria, id, origem) {
       const antes = progresso.estrelas;

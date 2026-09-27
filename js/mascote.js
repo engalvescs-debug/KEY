@@ -108,11 +108,15 @@ const Mascote = (function () {
     area.style.setProperty('--olhar-y', `${(dy / dist) * 6}px`);
   }
 
+  function dancar(ligado) {
+    if (area) area.classList.toggle('dancando', ligado);
+  }
+
   function limparBalao() {
     if (!balao) return;
     clearTimeout(timerBalao);
     balao.classList.remove('visivel');
   }
 
-  return { montar, svg, dizer, comemorar, pensar, olharPara, limparBalao };
+  return { montar, svg, dizer, comemorar, pensar, olharPara, limparBalao, dancar };
 })();

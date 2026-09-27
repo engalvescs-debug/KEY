@@ -89,9 +89,22 @@ trocar de voz no meio da frase.
   frustrar a criança): Vogais → Alfabeto → Sílabas → Montar Palavras.
   Cada nível tem uma etapa de "conhecer" (explorar no próprio ritmo) e uma
   de "praticar" (reconhecimento, com narração e efeitos sonoros suaves).
-- **Modo História**: histórias curtas com palavras destacadas que a
-  criança pode tocar para ouvir de novo, e uma pergunta de compreensão ao
-  final.
+- **Modo História** com 10 histórias: Três Porquinhos, Chapeuzinho
+  Vermelho, Branca de Neve, Patinho Feio, O Gatinho e a Lua, O Sapo Cantor
+  e, do folclore brasileiro, Saci Pererê, Curupira, Iara e Boitatá
+  (recontadas sem sustos, para crianças sensíveis). Cada história tem:
+  - cenas animadas (personagens pulando, soprando, nadando, voando...) e
+    efeitos sonoros gerados pelo próprio jogo (vento, toc-toc, uivo,
+    assobio do Saci, redemoinho, água, grilos, fogo...);
+  - palavras destacadas que, ao serem tocadas, se dividem em sílabas
+    (LO - BO = LOBO) e são lidas pela Lulu;
+  - desafios com palavras da própria história: vogal que falta, letra
+    inicial e montar palavra com sílabas;
+  - uma canção em karaokê (as sílabas acendem no ritmo) cuja melodia é
+    também a trilha de fundo da história. As canções são originais, exceto
+    "O sapo não lava o pé", cantiga popular de domínio público.
+  - pergunta de compreensão no final.
+  Os dados de cada história ficam em `js/data/historias.js`.
 - **Progresso salvo automaticamente** (estrelas e níveis concluídos) no
   navegador da própria TV.
 - **Pensado para crianças autistas**:

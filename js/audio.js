@@ -49,7 +49,93 @@ const Som = (function () {
   let volumeEfeitos = 0.8;
   let efeitosSuaves = false;
 
+  function volumeSfx(v) {
+    return v * volumeEfeitos * (efeitosSuaves ? 0.5 : 1);
+  }
+
+  // Tom com glissando: freqs = [inicial, final].
+  function deslize(freqs, inicio, duracao, volume, tipo = 'sine', filtro = null) {
+    const c = contexto();
+    if (!c) return;
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = tipo;
+    osc.frequency.setValueAtTime(freqs[0], inicio);
+    osc.frequency.exponentialRampToValueAtTime(freqs[1], inicio + duracao);
+    gain.gain.setValueAtTime(0.0001, inicio);
+    gain.gain.exponentialRampToValueAtTime(volumeSfx(volume), inicio + Math.min(0.03, duracao / 3));
+    gain.gain.exponentialRampToValueAtTime(0.0001, inicio + duracao);
+    let saida = osc;
+    if (filtro) {
+      const f = c.createBiquadFilter();
+      f.type = filtro.tipo;
+      f.frequency.value = filtro.freq;
+      f.Q.value = filtro.q || 1;
+      saida = osc.connect(f);
+    }
+    saida.connect(gain).connect(c.destination);
+    osc.start(inicio);
+    osc.stop(inicio + duracao + 0.05);
+  }
+
+  // Ruído filtrado; freqs é o caminho do filtro ao longo da duração.
+  function ruido(inicio, duracao, volume, tipoFiltro, freqs, q = 1, suave = false) {
+    const c = contexto();
+    if (!c) return;
+    const tamanho = Math.max(1, Math.floor(c.sampleRate * duracao));
+    const buffer = c.createBuffer(1, tamanho, c.sampleRate);
+    const dados = buffer.getChannelData(0);
+    for (let i = 0; i < tamanho; i++) dados[i] = Math.random() * 2 - 1;
+    const fonte = c.createBufferSource();
+    fonte.buffer = buffer;
+    const filtro = c.createBiquadFilter();
+    filtro.type = tipoFiltro;
+    filtro.Q.value = q;
+    filtro.frequency.setValueAtTime(freqs[0], inicio);
+    freqs.slice(1).forEach((f, i) => {
+      filtro.frequency.linearRampToValueAtTime(f, inicio + (duracao * (i + 1)) / (freqs.length - 1));
+    });
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(0.0001, inicio);
+    gain.gain.linearRampToValueAtTime(volumeSfx(volume), inicio + (suave ? duracao * 0.35 : 0.01));
+    gain.gain.linearRampToValueAtTime(0.0001, inicio + duracao);
+    fonte.connect(filtro).connect(gain).connect(c.destination);
+    fonte.start(inicio);
+  }
+
+  const EFEITOS = {
+    vento: t => ruido(t, 1.6, 0.5, 'bandpass', [300, 1500, 500, 1200, 350], 1.2, true),
+    porta: t => [0, 0.24].forEach(d => { deslize([160, 90], t + d, 0.14, 0.6); ruido(t + d, 0.05, 0.25, 'lowpass', [900]); }),
+    martelo: t => [0, 0.32, 0.64].forEach(d => { ruido(t + d, 0.05, 0.4, 'bandpass', [2200], 3); deslize([420, 200], t + d, 0.08, 0.25); }),
+    passos: t => [0, 0.34, 0.68, 1.02].forEach((d, i) => { deslize([i % 2 ? 110 : 95, 60], t + d, 0.14, 0.5); ruido(t + d, 0.06, 0.12, 'lowpass', [500]); }),
+    passaros: t => [0, 0.16, 0.5, 0.64, 0.8].forEach((d, i) => deslize([2200 + i * 150, 3400 - i * 100], t + d, 0.09, 0.12)),
+    agua: t => { deslize([950, 280], t, 0.22, 0.3); ruido(t, 0.35, 0.12, 'highpass', [1800]); deslize([300, 750], t + 0.3, 0.12, 0.2); },
+    magia: t => [1319, 1568, 1976, 2637, 3136, 2637].forEach((f, i) => deslize([f, f * 1.01], t + i * 0.07, 0.3, 0.1, 'triangle')),
+    assobio: t => [0, 0.62].forEach(d => { deslize([1100, 1900], t + d, 0.24, 0.15); deslize([1900, 1300], t + d + 0.24, 0.22, 0.15); }),
+    redemoinho: t => ruido(t, 1.8, 0.45, 'bandpass', [400, 1600, 500, 1800, 600, 1400], 3, true),
+    quack: t => [0, 0.26].forEach(d => deslize([420, 300], t + d, 0.16, 0.25, 'sawtooth', { tipo: 'bandpass', freq: 1000, q: 2 })),
+    uivo: t => { deslize([380, 620], t, 0.6, 0.16, 'triangle'); deslize([620, 450], t + 0.6, 0.9, 0.16, 'triangle'); },
+    crocante: t => [0, 0.08, 0.18].forEach(d => ruido(t + d, 0.05, 0.4, 'highpass', [2600])),
+    sino: t => { deslize([880, 878], t, 1.8, 0.2); deslize([1760, 1755], t, 1.1, 0.08); deslize([2640, 2630], t, 0.6, 0.04); },
+    fogo: t => {
+      ruido(t, 1.6, 0.15, 'lowpass', [350], 1, true);
+      for (let i = 0; i < 22; i++) ruido(t + Math.random() * 1.5, 0.02, 0.1 + Math.random() * 0.25, 'highpass', [1200 + Math.random() * 3000]);
+    },
+    grilos: t => [0, 0.55, 1.1].forEach(g => { for (let i = 0; i < 6; i++) deslize([4200, 4150], t + g + i * 0.04, 0.03, 0.05); }),
+    miau: t => { deslize([520, 880], t, 0.25, 0.18, 'triangle'); deslize([880, 460], t + 0.25, 0.4, 0.18, 'triangle'); },
+    sapo: t => [0, 0.3].forEach(d => deslize([130, 85], t + d, 0.2, 0.35, 'square', { tipo: 'lowpass', freq: 700 })),
+    risada: t => [560, 530, 500, 470].forEach((f, i) => deslize([f, f - 40], t + i * 0.14, 0.1, 0.14, 'square', { tipo: 'lowpass', freq: 1600 })),
+    pulo: t => { deslize([200, 700], t, 0.18, 0.25); deslize([700, 420], t + 0.18, 0.18, 0.15); }
+  };
+
+  function efeito(nome) {
+    const c = contexto();
+    if (!c || !EFEITOS[nome]) return;
+    EFEITOS[nome](c.currentTime + 0.02);
+  }
+
   return {
+    efeito,
     contexto,
     desbloquear,
     definirVolume(v) { volumeEfeitos = v; },
@@ -213,10 +299,35 @@ const Musica = (function () {
   let calmo = false;
   let volumeBase = 0.8;
   let abaixada = false;
+  let silenciada = false;
+  let forma = FORMA;
+  let bpmTema = null;
+  let temaAtual = null;
 
   function volumeAlvo() {
+    if (silenciada) return 0.0001;
     const base = (calmo ? 0.07 : 0.11) * volumeBase;
     return abaixada ? base * 0.35 : base;
+  }
+
+  // Tema de uma história: a melodia é a da própria canção (cada verso
+  // ocupa 2 compassos), para a criança já conhecer a música ao cantar.
+  function definirTema(tema) {
+    if (tema === temaAtual) return;
+    temaAtual = tema;
+    if (!tema) {
+      forma = FORMA;
+      bpmTema = null;
+    } else {
+      const melodia = [];
+      tema.versos.slice(0, 4).forEach(v => {
+        for (let i = 0; i < 8; i++) melodia.push(i < v.length ? v[i] : null);
+      });
+      while (melodia.length < 32) melodia.push(null);
+      forma = [{ melodia, baixo: tema.baixo }];
+      bpmTema = tema.bpm;
+    }
+    passo = 0;
   }
 
   function nota(c, freq, t, dur, vol, tipo) {
@@ -249,7 +360,7 @@ const Musica = (function () {
   }
 
   function agendar(c, t, duracaoPasso) {
-    const parte = FORMA[Math.floor(passo / 32) % FORMA.length];
+    const parte = forma[Math.floor(passo / 32) % forma.length];
     const i = passo % 32;
     const n = parte.melodia[i];
     if (n !== null) {
@@ -266,11 +377,12 @@ const Musica = (function () {
   function ciclo() {
     const c = Som.contexto();
     if (!c) return;
-    const duracaoPasso = 60 / (calmo ? 84 : 104);
+    const bpm = bpmTema ? bpmTema * (calmo ? 0.85 : 1) : (calmo ? 84 : 104);
+    const duracaoPasso = 60 / bpm;
     while (proximoTempo < c.currentTime + 0.15) {
       agendar(c, proximoTempo, duracaoPasso);
       proximoTempo += duracaoPasso;
-      passo = (passo + 1) % (32 * FORMA.length);
+      passo = (passo + 1) % (32 * forma.length);
     }
   }
 
@@ -309,7 +421,68 @@ const Musica = (function () {
     iniciar,
     parar,
     get ligada() { return ligada; },
+    definirTema,
+    silenciar(v) { silenciada = v; ajustarVolume(); },
     definirCalmo(v) { calmo = v; ajustarVolume(); },
     definirVolume(v) { volumeBase = v; ajustarVolume(); }
   };
+})();
+
+// Karaokê: toca a melodia da canção nota a nota (uma nota por sílaba) e
+// avisa qual sílaba está soando, para a tela acender a sílaba certa.
+const Cancao = (function () {
+  const midi = n => 440 * Math.pow(2, (n - 69) / 12);
+  let timers = [];
+  let volume = 0.8;
+
+  function nota(c, freq, t, dur, vol, tipo) {
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = tipo;
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol * volume, t + 0.02);
+    g.gain.setValueAtTime(vol * volume, t + dur * 0.6);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g).connect(c.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.05);
+  }
+
+  function parar() {
+    timers.forEach(clearTimeout);
+    timers = [];
+    Musica.silenciar(false);
+  }
+
+  // silabasPorVerso: quantidade de sílabas de cada verso.
+  function tocar({ silabasPorVerso, notas, bpm, baixo }, aoSilaba, aoFim) {
+    parar();
+    const c = Som.contexto();
+    if (!c) return aoFim && aoFim();
+    Musica.silenciar(true);
+    const passo = 60 / bpm;
+    let t = c.currentTime + 0.4;
+    silabasPorVerso.forEach((qtd, v) => {
+      const ns = notas[v] || notas[0];
+      for (let i = 0; i < qtd; i++) {
+        const ultima = i === qtd - 1;
+        const dur = ultima ? passo * 1.9 : passo * 0.95;
+        const n = ns[i % ns.length];
+        nota(c, midi(n), t, dur, 0.22, 'triangle');
+        nota(c, midi(n + 12), t, dur * 0.7, 0.05, 'sine');
+        if (i % 4 === 0) nota(c, midi(baixo[(v * 2 + Math.floor(i / 4)) % baixo.length]), t, passo * 3.5, 0.18, 'sine');
+        const atraso = (t - c.currentTime) * 1000;
+        timers.push(setTimeout(() => aoSilaba(v, i), atraso));
+        t += ultima ? passo * 2 : passo;
+      }
+      t += passo * 0.5;
+    });
+    timers.push(setTimeout(() => {
+      Musica.silenciar(false);
+      if (aoFim) aoFim();
+    }, (t - c.currentTime) * 1000 + 200));
+  }
+
+  return { tocar, parar, definirVolume(v) { volume = v; } };
 })();

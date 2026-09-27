@@ -17,6 +17,10 @@ var FALAS = {
   montarPalavra: 'Vamos montar a palavra',
   montarDica: 'Toque nas sílabas na ordem certa.',
   palavraMontada: 'Isso! Você montou a palavra!',
+  letraInicial: 'Com qual letra começa a palavra',
+  vogalFaltando: 'Qual vogal está faltando na palavra',
+  horaMusica: 'Hora da música! Vamos cantar juntos?',
+  fimHistoria: 'Fim da história! Você é um ótimo leitor!',
   historiaAcerto: 'Isso mesmo! Você entendeu a história!',
   nivelCompleto: 'Uhuu! Você completou este nível! Estou muito orgulhosa de você!',
   acertos: ['Isso! Muito bem!', 'Uau, você acertou!', 'Parabéns, que incrível!'],
@@ -61,7 +65,7 @@ function pronunciaFala(texto) {
   }
   // Palavras em CAIXA ALTA (destaques das histórias) seriam soletradas.
   return texto.split(' ').map(function (p) {
-    return /[A-Z]{2}/.test(p) && p === p.toUpperCase() ? p.toLowerCase() : p;
+    return /[A-ZÁÉÍÓÚÂÊÔÃÕÇ]{2}/.test(p) && p === p.toUpperCase() ? p.toLowerCase() : p;
   }).join(' ');
 }
 
@@ -78,7 +82,11 @@ function listarTodasFalas(conteudo) {
   conteudo.palavras.forEach(function (p) { textos.push(p.palavra); });
   conteudo.historias.forEach(function (h) {
     textos.push(h.titulo, h.pergunta.texto);
-    h.paginas.forEach(function (pg) { textos = textos.concat(pg.texto, pg.destaques); });
+    h.paginas.forEach(function (pg) {
+      if (pg.texto) textos.push(pg.texto);
+      (pg.d || []).forEach(function (s) { textos.push(s.replace(/-/g, '')); });
+      if (pg.palavra) textos.push(pg.palavra);
+    });
   });
   var vistos = {};
   return textos.filter(function (t) {
