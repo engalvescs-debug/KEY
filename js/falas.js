@@ -59,7 +59,10 @@ function pronunciaFala(texto) {
   if (/^[BCDFGJLMNPRSTVZ][AEIOU]$/.test(texto)) {
     return texto[0].toLowerCase() + VOGAL_ABERTA[texto[1]];
   }
-  return texto.toLowerCase();
+  // Palavras em CAIXA ALTA (destaques das histórias) seriam soletradas.
+  return texto.split(' ').map(function (p) {
+    return /[A-Z]{2}/.test(p) && p === p.toUpperCase() ? p.toLowerCase() : p;
+  }).join(' ');
 }
 
 // Lista completa de falas (usada pelo gerador de áudios em tools/).

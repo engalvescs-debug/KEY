@@ -71,12 +71,17 @@ mic/                    página que roda no CELULAR (controle remoto + microfone
 ### Como gerar as gravações de voz
 
 1. `node tools/listar-falas.js --faltando > falas.json` lista cada fala
-   com o texto a ser pronunciado e o nome do arquivo (slug).
-2. Gere o áudio no ElevenLabs lendo as falas em sequência, com uma pausa
-   de ~1,2s entre elas (`<break time="1.2s" />`).
-3. `python3 tools/dividir_audio.py gravacao.mp3 slugs.json audio/` corta a
-   gravação em um arquivo por fala.
-4. `node tools/gerar-manifest.js` atualiza a lista de gravações.
+   que ainda não tem gravação, com o texto a pronunciar (`pronuncia`) e o
+   nome do arquivo (`slug`).
+2. Gere **cada fala separadamente** no ElevenLabs (voz "Bea - Calm &
+   Friendly", modelo multilingual v2) e salve como `audio/<slug>.mp3`.
+   Gravar várias falas num áudio só e cortar depois não funciona bem para
+   letras e sílabas soltas: a voz encurta as pausas entre elas.
+3. `node tools/gerar-manifest.js` atualiza a lista de gravações.
+
+Uma frase que o jogo emenda com outra (ex.: "Encontre a letra" + "B") só
+deve ganhar gravação junto com as partes que a completam, para a Lulu não
+trocar de voz no meio da frase.
 
 ## O que já está pronto (nesta primeira versão)
 
