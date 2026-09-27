@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Controle - Aprender a Ler</title>
+  <style>
+    :root {
+      --fundo: #1B1B3A;
+      --cartao: #2A2A5A;
+      --destaque: #FFD93D;
+      --sucesso: #6BCB77;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; min-height: 100%;
+      background: var(--fundo); color: #fff;
+      font-family: 'Trebuchet MS', Verdana, sans-serif;
+      display: flex; justify-content: center;
+    }
+    .container { width: 100%; max-width: 480px; padding: 24px 20px 40px; }
+    h1 { text-align: center; font-size: 1.6rem; margin-bottom: 4px; }
+    p.sub { text-align: center; opacity: 0.75; margin-top: 0; }
+
+    #tela-conectar { display: block; }
+    #tela-controle { display: none; }
+
+    input[type="text"] {
+      width: 100%; font-size: 2rem; text-align: center; letter-spacing: 0.4em;
+      padding: 16px; border-radius: 16px; border: none; margin: 20px 0;
+      background: var(--cartao); color: #fff;
+    }
+    button {
+      width: 100%; font-size: 1.3rem; padding: 16px; border-radius: 16px;
+      border: none; background: var(--sucesso); color: #103018; font-weight: bold;
+      margin-bottom: 12px;
+    }
+    #status { text-align: center; min-height: 1.5em; margin-top: 8px; }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 80px);
+      gap: 10px;
+      margin: 24px 0;
+    }
+    .dpad button {
+      margin: 0; height: 100%; font-size: 1.8rem;
+      background: var(--cartao); color: #fff;
+    }
+    .dpad .ok { background: var(--destaque); color: #3a2e00; }
+    .dpad .vazio { background: transparent; }
+
+    #btn-mic {
+      background: #FF6B6B; color: #fff; font-size: 1.5rem; padding: 22px;
+    }
+    #btn-mic.ouvindo { background: var(--sucesso); color: #103018; }
+    #ultimo-texto { text-align: center; opacity: 0.7; min-height: 1.4em; }
+
+    #btn-voltar-tv { background: var(--cartao); color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎮 Controle Remoto</h1>
+    <p class="sub">Aprender a Ler — conecte com a TV</p>
+
+    <div id="tela-conectar">
+      <p class="sub">Digite o código de 4 dígitos que aparece na TV:</p>
+      <input type="text" id="input-codigo" inputmode="numeric" maxlength="4" placeholder="0000" />
+      <button id="btn-conectar">Conectar</button>
+      <p id="status">Aguardando código...</p>
+    </div>
+
+    <div id="tela-controle">
+      <p id="status">✅ Conectado à TV!</p>
+
+      <div class="dpad">
+        <div class="vazio"></div>
+        <button data-comando="cima">▲</button>
+        <div class="vazio"></div>
+        <button data-comando="esquerda">◀</button>
+        <button class="ok" data-comando="ok">OK</button>
+        <button data-comando="direita">▶</button>
+        <div class="vazio"></div>
+        <button data-comando="baixo">▼</button>
+        <div class="vazio"></div>
+      </div>
+
+      <button id="btn-mic">🎤 Toque e Fale</button>
+      <p id="ultimo-texto"></p>
+
+      <button id="btn-voltar-tv" data-comando="voltar">⬅️ Voltar (na TV)</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="mic.js"></script>
+</body>
+</html>

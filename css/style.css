@@ -1,0 +1,223 @@
+/* Design pensado para TV (10-foot UI): fontes grandes, alto contraste,
+   área segura contra corte de tela (overscan), e um "Modo Calmo" para
+   reduzir estímulos visuais/sonoros para crianças autistas. */
+
+@font-face {
+  font-family: 'Baloo';
+  src: local('Comic Sans MS'), local('Verdana');
+}
+
+:root {
+  --fundo: #1B1B3A;
+  --fundo-card: #2A2A5A;
+  --texto: #FFFFFF;
+  --destaque: #FFD93D;
+  --sucesso: #6BCB77;
+  --transicao: 0.35s ease;
+  --escala-foco: 1.08;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: 'Baloo', 'Trebuchet MS', Verdana, sans-serif;
+  overflow: hidden;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  /* margem de segurança para TVs com overscan */
+  padding: 4vh 4vw;
+}
+
+.tela {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  animation: entrar var(--transicao);
+}
+
+@keyframes entrar {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reduzir-animacoes .tela,
+.reduzir-animacoes * {
+  animation: none !important;
+  transition: none !important;
+}
+
+h1.titulo {
+  font-size: 4.2vw;
+  margin: 0 0 2vh 0;
+  text-align: center;
+}
+
+h2.subtitulo {
+  font-size: 2.4vw;
+  margin: 0 0 3vh 0;
+  text-align: center;
+  opacity: 0.85;
+  font-weight: normal;
+}
+
+.grade {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2vw;
+  justify-content: center;
+  align-content: center;
+  flex: 1;
+}
+
+.cartao {
+  background: var(--fundo-card);
+  border-radius: 24px;
+  border: 6px solid transparent;
+  padding: 2vh 2vw;
+  min-width: 14vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5vh;
+  cursor: pointer;
+  transition: transform var(--transicao), border-color var(--transicao);
+}
+
+.cartao .emoji { font-size: 5vw; line-height: 1; }
+.cartao .letra { font-size: 3.5vw; font-weight: bold; }
+.cartao .palavra { font-size: 1.3vw; opacity: 0.85; letter-spacing: 0.1em; }
+
+.focado {
+  border-color: var(--destaque);
+  transform: scale(var(--escala-foco));
+  box-shadow: 0 0 40px rgba(255, 217, 61, 0.5);
+}
+
+.botao {
+  background: var(--fundo-card);
+  border: 6px solid transparent;
+  border-radius: 18px;
+  color: var(--texto);
+  font-size: 1.8vw;
+  padding: 1.5vh 3vw;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.botao.principal { background: var(--sucesso); color: #103018; font-weight: bold; }
+
+.barra-inferior {
+  display: flex;
+  justify-content: center;
+  gap: 2vw;
+  padding-top: 2vh;
+}
+
+.rodape-dicas {
+  text-align: center;
+  opacity: 0.6;
+  font-size: 1.1vw;
+  padding-top: 1vh;
+}
+
+.progresso-estrelas {
+  position: fixed;
+  top: 2vh;
+  right: 3vw;
+  font-size: 1.6vw;
+  opacity: 0.85;
+}
+
+.painel-mensagem {
+  text-align: center;
+  font-size: 2vw;
+  min-height: 6vh;
+  transition: opacity var(--transicao);
+}
+
+.mensagem-gentil {
+  color: var(--destaque);
+}
+
+.pagina-historia {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2vh;
+  text-align: center;
+}
+
+.pagina-historia .emoji-cena { font-size: 8vw; }
+
+.texto-historia {
+  font-size: 2.4vw;
+  max-width: 70vw;
+  line-height: 1.5;
+}
+
+.palavra-destaque {
+  color: var(--destaque);
+  font-weight: bold;
+  cursor: pointer;
+  border-bottom: 4px dashed rgba(255, 217, 61, 0.5);
+}
+
+.opcoes-config {
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+  max-width: 50vw;
+  margin: 0 auto;
+}
+
+.linha-config {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--fundo-card);
+  border-radius: 16px;
+  padding: 1.5vh 2vw;
+  font-size: 1.6vw;
+  border: 4px solid transparent;
+}
+
+.chave {
+  width: 4vw;
+  height: 2vw;
+  background: #555;
+  border-radius: 999px;
+  position: relative;
+}
+.chave.ligado { background: var(--sucesso); }
+.chave::after {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 5%;
+  width: 40%;
+  height: 80%;
+  background: white;
+  border-radius: 50%;
+  transition: left var(--transicao);
+}
+.chave.ligado::after { left: 55%; }
+
+/* Modo Calmo: paleta mais suave, menos saturada, ainda alto contraste. */
+.modo-calmo {
+  --fundo: #22243A;
+  --fundo-card: #33365A;
+  --destaque: #E8C468;
+}
